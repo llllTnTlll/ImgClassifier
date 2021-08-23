@@ -3,9 +3,25 @@ import json
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from model import google_net
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
+train_gpu = False
 
 
 def main():
+    # train with gpu
+    global train_gpu
+    if train_gpu is True:
+        gpus = tf.config.experimental.list_physical_devices("GPU")
+        if gpus:
+            try:
+                for gpu in gpus:
+                    tf.config.experimental.set_memory_growth(gpu, True)
+            except RuntimeError as e:
+                print(e)
+                exit(-1)
+
     data_root = os.path.abspath(os.path.join(os.getcwd(), "../.."))  # get data root path
     image_path = os.path.join(data_root, "data_set", "flower_data")  # flower data set path
     train_dir = os.path.join(image_path, "train")
