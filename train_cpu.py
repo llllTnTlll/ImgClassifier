@@ -15,8 +15,8 @@ def main():
         return img
 
     # 必要参数
-    train_dir = 'E:\BaiduNetdiskDownload//train'
-    validation_dir = 'E:\BaiduNetdiskDownload//val'
+    train_dir = r'E:\BaiduNetdiskDownload\train'
+    validation_dir = r'E:\BaiduNetdiskDownload\val'
     img_path = []  # 保存训练照片的地址集
     class_num = 0
     epochs = 10
@@ -29,6 +29,10 @@ def main():
     for folder in folder_list:
         class_num += 1
         img_path.append(os.path.sep.join([train_dir, folder]))
+
+    # 创建权重存储目录
+    if not os.path.exists("save_weights"):
+        os.makedirs("save_weights")
 
     # 定义训练集数据生成器
     train_image_generator = ImageDataGenerator(preprocessing_function=pre_treatment,
@@ -64,7 +68,7 @@ def main():
     model.summary()
 
     loss_object = tf.keras.losses.CategoricalCrossentropy(from_logits=False)  # 定义损失函数类型
-    optimizer = tf.keras.optimizers.Adam(learning_rate=0.0003)  # 定义优化器类型
+    optimizer = tf.keras.optimizers.Adam(learning_rate=0.0003)                # 定义优化器类型
 
     train_loss = tf.keras.metrics.Mean(name='train_loss')
     train_accuracy = tf.keras.metrics.CategoricalAccuracy(name='train_accuracy')
@@ -83,7 +87,7 @@ def main():
         gradients = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
         train_loss(loss)
-        train_accuracy(labels, output)
+        train_accuracy((labels, output))
 
     @tf.function
     def val_step(imgs, labels):
@@ -91,7 +95,7 @@ def main():
         loss = loss_object(labels, output)
 
         val_loss(loss)
-        val_accuracy(labels, output)
+        val_accuracy((labels, output))
 
     # 加载已保存模型
     checkpoint_save_path = "./save_weights/myGoogLeNet.ckpt"
@@ -112,8 +116,6 @@ def main():
         for step in train_bar:
             images, labels = next(train_data_gen)
             train_step(images, labels)
-
-            # print train process
             train_bar.desc = "train epoch[{}/{}] loss:{:.3f}, acc:{:.3f}".format(epoch + 1,
                                                                                  epochs,
                                                                                  train_loss.result(),
@@ -124,8 +126,6 @@ def main():
         for step in val_bar:
             val_images, val_labels = next(validation_data_gen)
             val_step(val_images, val_labels)
-
-            # print val process
             val_bar.desc = "valid epoch[{}/{}] loss:{:.3f}, acc:{:.3f}".format(epoch + 1,
                                                                                epochs,
                                                                                val_loss.result(),
