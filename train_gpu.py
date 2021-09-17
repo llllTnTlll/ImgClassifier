@@ -3,7 +3,6 @@ import os
 import json
 import glob
 from model import google_net
-from tqdm import tqdm
 from tensorflow.keras import *
 
 
@@ -17,8 +16,9 @@ def main():
         gpu0 = gpus[0]  # 如果有多个GPU，仅使用第0个GPU
         tf.config.experimental.set_memory_growth(gpu0, True)  # 设置GPU显存用量按需使用
         # 或者也可以设置GPU显存为固定使用量(例如：4G)
-        # tf.config.experimental.set_virtual_device_configuration(gpu0,
-        # [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=4096)])
+        tf.config.experimental.set_virtual_device_configuration(gpu0,
+                                                                [tf.config.experimental.VirtualDeviceConfiguration(
+                                                                    memory_limit=4096)])
         tf.config.set_visible_devices([gpu0], "GPU")
 
     # 预处理方法
@@ -35,7 +35,7 @@ def main():
     train_dir = r"C:\Users\lzy99\Pictures\Saved Pictures\train"
     validation_dir = r"C:\Users\lzy99\Pictures\Saved Pictures\val"
     epochs = 10
-    batch_size = 5
+    batch_size = 128
     target_height = 224
     target_width = 224
 
@@ -50,14 +50,15 @@ def main():
     train_image_list = glob.glob(train_dir + "/*/*.jpg")
     label_list = [class_dict[path.split(os.path.sep)[-2]] for path in train_image_list]
     train_dataset = tf.data.Dataset.from_tensor_slices((train_image_list, label_list)) \
-        .map(pre_treatment) \
+        .map(pre_treatment, num_parallel_calls=tf.data.experimental.AUTOTUNE) \
         .batch(batch_size) \
-        .shuffle(buffer_size=1000)\
+        .shuffle(buffer_size=1000) \
         .prefetch(tf.data.experimental.AUTOTUNE).cache()
+
     # 构建测试集
     test_image_list = glob.glob(validation_dir + "/*/*.jpg")
     test_dataset = tf.data.Dataset.from_tensor_slices((test_image_list, label_list)) \
-        .map(pre_treatment) \
+        .map(pre_treatment, num_parallel_calls=tf.data.experimental.AUTOTUNE) \
         .batch(batch_size) \
         .shuffle(buffer_size=1000) \
         .prefetch(tf.data.experimental.AUTOTUNE).cache()
