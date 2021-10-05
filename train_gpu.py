@@ -102,33 +102,33 @@ def main():
         test_loss.update_state(t_loss)
         test_accuracy.update_state(labels, output)
 
-    def train_model(train_ds, val_ds, epochs):
-        best_loss = float("inf")
-        for epoch in tf.range(1, epochs + 1):
+    best_test_loss = float('inf')
+    train_step_num = len(train_image_list) // batch_size
+    val_step_num = len(test_image_list) // batch_size
+    for epoch in range(1, epochs + 1):
+        train_loss.reset_states()  # clear history info
+        train_accuracy.reset_states()  # clear history info
+        test_loss.reset_states()  # clear history info
+        test_accuracy.reset_states()  # clear history info
 
-            for features, labels in train_ds:
-                train_step(features, labels)
+        for index, (images, labels) in enumerate(train_dataset):
+            train_step(images, labels)
+            if index + 1 == train_step_num:
+                break
 
-            for features, labels in val_ds:
-                test_step(features, labels)
+        for index, (images, labels) in enumerate(test_dataset):
+            test_step(images, labels)
+            if index + 1 == val_step_num:
+                break
 
-            template = 'Epoch {}, Loss: {}, Accuracy: {}, Test Loss: {}, Test Accuracy: {}'
-            print(template.format(epoch,
-                                  train_loss.result(),
-                                  train_accuracy.result() * 100,
-                                  test_loss.result(),
-                                  test_accuracy.result() * 100))
-
-            if test_loss.result() < best_loss:
-                best_loss = test_loss.result()
-                model.save_weights("./save_weights/myGoogLeNet.ckpt")
-
-            train_loss.reset_states()
-            test_loss.reset_states()
-            train_accuracy.reset_states()
-            test_accuracy.reset_states()
-
-    train_model(train_dataset, test_dataset, epochs=epochs)
+        template = 'Epoch {}, Loss: {}, Accuracy: {}, Test Loss: {}, Test Accuracy: {}'
+        print(template.format(epoch,
+                              train_loss.result(),
+                              train_accuracy.result() * 100,
+                              test_loss.result(),
+                              test_accuracy.result() * 100))
+        if test_loss.result() < best_test_loss:
+            model.save_weights("./save_weights/myGoogLeNet.ckpt".format(epoch), save_format='tf')
 
 
 if __name__ == '__main__':
